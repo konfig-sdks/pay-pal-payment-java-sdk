@@ -1,0 +1,2905 @@
+openapi: 3.0.3
+info:
+  contact: {}
+  description: "Call the Payments API to authorize payments, capture authorized payments,\
+    \ refund payments that have already been captured, and show payment information.\
+    \ Use the Payments API in conjunction with the <a href=\"/docs/api/orders/v2/\"\
+    >Orders API</a>. For more information, see the <a href=\"/docs/checkout/\">PayPal\
+    \ Checkout Overview</a>."
+  title: Payments
+  version: "2.5"
+  x-konfig-ignore:
+    object-with-no-properties: true
+    potential-incorrect-type: true
+  x-konfig-has-globally-required-security: true
+externalDocs:
+  url: https://developer.paypal.com/docs/api/payments/v2/
+servers:
+- description: PayPal Sandbox Environment
+  url: https://api-m.sandbox.paypal.com
+- description: PayPal Live Environment
+  url: https://api-m.paypal.com
+tags:
+- description: "Use the `/authorizations` resource to show details for, capture payment\
+    \ for, reauthorize, and void authorized payments."
+  name: authorizations
+- description: Use the `/captures` resource to show details for and refund a captured
+    payment.
+  name: captures
+- description: Use the `/refunds` resource to show refund details.
+  name: refunds
+- description: Assets APIs for Checkout
+  name: assets
+- description: Use the <code>/cancel-payment</code> resource to cancel an order capture
+    or order authorization by <code>PayPal-Request-Id</code>. The merchant triggers
+    the cancel action.
+  name: cancel-payment
+- description: Use the `/find-eligible-methods` resource to show list of eligible
+    payment methods for given customer/order context.
+  name: find-eligible-methods
+- description: Use the `/payment-resource-operations` resource to show verifications
+    details.
+  name: payment-resource-operations
+paths:
+  /v2/payments/authorizations/{authorization_id}:
+    get:
+      description: "Shows details for an authorized payment, by ID."
+      operationId: Authorizations_showDetails
+      parameters:
+      - description: The PayPal-generated ID for the authorized payment to void.
+        explode: false
+        in: path
+        name: authorization_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authorization-2'
+          description: A successful request returns the HTTP <code>200 OK</code> status
+            code and a JSON response body that shows authorization details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_401'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsShowDetailsResponse'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsShowDetails404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/payment/authcapture
+      summary: Show details for authorized payment
+      tags:
+      - authorizations
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-get--v2-payments-authorizations-authorization_id
+      x-accepts: application/json
+  /v2/payments/authorizations/{authorization_id}/capture:
+    post:
+      description: "Captures an authorized payment, by ID."
+      operationId: Authorizations_capturePayment
+      parameters:
+      - description: The PayPal-generated ID for the authorized payment to void.
+        explode: false
+        in: path
+        name: authorization_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: The server stores keys for 45 days.
+        explode: false
+        in: header
+        name: PayPal-Request-Id
+        required: false
+        schema:
+          type: string
+        style: simple
+      - description: "The preferred server response upon successful completion of\
+          \ the request. Value is:<ul><li><code>return=minimal</code>. The server\
+          \ returns a minimal response to optimize communication between the API caller\
+          \ and the server. A minimal response includes the <code>id</code>, <code>status</code>\
+          \ and HATEOAS links.</li><li><code>return=representation</code>. The server\
+          \ returns a complete resource representation, including the current state\
+          \ of the resource.</li></ul>"
+        explode: false
+        in: header
+        name: Prefer
+        required: false
+        schema:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            examples:
+              capture_request:
+                value:
+                  amount:
+                    value: "10.99"
+                    currency_code: USD
+                  invoice_id: INVOICE-123
+                  final_capture: true
+                  note_to_payer: "If the ordered color is not available, we will substitute\
+                    \ with a different color free of charge."
+                  soft_descriptor: Bob's Custom Sweaters
+            schema:
+              $ref: '#/components/schemas/capture_request'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/capture-2'
+          description: A successful request returns the HTTP <code>201 Created</code>
+            status code and a JSON response body that shows captured payment details.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsCapturePaymentResponse'
+          description: The request failed because it is not well-formed or is syntactically
+            incorrect or violates schema.
+          x-do-not-generate: true
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_401'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsCapturePayment403Response'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsCapturePayment404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsCapturePayment422Response'
+          description: The request failed because it is semantically incorrect or
+            failed business validation.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/payment/authcapture
+      summary: Capture authorized payment
+      tags:
+      - authorizations
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-post--v2-payments-authorizations-authorization_id-capture
+      x-content-type: application/json
+      x-accepts: application/json
+  /v2/payments/authorizations/{authorization_id}/reauthorize:
+    post:
+      description: "Reauthorizes an authorized PayPal account payment, by ID. To ensure\
+        \ that funds are still available, reauthorize a payment after its initial\
+        \ three-day honor period expires. Within the 29-day authorization period,\
+        \ you can issue multiple re-authorizations after the honor period expires.<br/><br/>If\
+        \ 30 days have transpired since the date of the original authorization, you\
+        \ must create an authorized payment instead of reauthorizing the original\
+        \ authorized payment.<br/><br/>A reauthorized payment itself has a new honor\
+        \ period of three days.<br/><br/>You can reauthorize an authorized payment\
+        \ from 4 to 29 days after the 3-day honor period. The allowed amount depends\
+        \ on context and geography, for example in US it is up to 115% of the original\
+        \ authorized amount, not to exceed an increase of $75 USD.<br/><br/>Supports\
+        \ only the `amount` request parameter.<blockquote><strong>Note:</strong> This\
+        \ request is currently not supported for Partner use cases.</blockquote>"
+      operationId: Authorizations_reauthorizePayment
+      parameters:
+      - description: The PayPal-generated ID for the authorized payment to void.
+        explode: false
+        in: path
+        name: authorization_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: The server stores keys for 45 days.
+        explode: false
+        in: header
+        name: PayPal-Request-Id
+        required: false
+        schema:
+          type: string
+        style: simple
+      - description: "The preferred server response upon successful completion of\
+          \ the request. Value is:<ul><li><code>return=minimal</code>. The server\
+          \ returns a minimal response to optimize communication between the API caller\
+          \ and the server. A minimal response includes the <code>id</code>, <code>status</code>\
+          \ and HATEOAS links.</li><li><code>return=representation</code>. The server\
+          \ returns a complete resource representation, including the current state\
+          \ of the resource.</li></ul>"
+        explode: false
+        in: header
+        name: Prefer
+        required: false
+        schema:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            examples:
+              reauthorize_request:
+                value:
+                  amount:
+                    value: "10.99"
+                    currency_code: USD
+            schema:
+              $ref: '#/components/schemas/reauthorize_request'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authorization-2'
+          description: A successful request returns the HTTP <code>201 Created</code>
+            status code and a JSON response body that shows the reauthorized payment
+            details.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsReauthorizePaymentResponse'
+          description: The request failed because it is not well-formed or is syntactically
+            incorrect or violates schema.
+          x-do-not-generate: true
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_401'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsReauthorizePayment403Response'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsReauthorizePayment404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsReauthorizePayment422Response'
+          description: The request failed because it either is semantically incorrect
+            or failed business validation.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/payment/authcapture
+      summary: Reauthorize authorized payment
+      tags:
+      - authorizations
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-post--v2-payments-authorizations-authorization_id-reauthorize
+      x-content-type: application/json
+      x-accepts: application/json
+  /v2/payments/authorizations/{authorization_id}/void:
+    post:
+      description: "Voids, or cancels, an authorized payment, by ID. You cannot void\
+        \ an authorized payment that has been fully captured."
+      operationId: Authorizations_voidPayment
+      parameters:
+      - description: The PayPal-generated ID for the authorized payment to void.
+        explode: false
+        in: path
+        name: authorization_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: "An API-caller-provided JSON Web Token (JWT) assertion that identifies\
+          \ the merchant. For details, see [PayPal-Auth-Assertion](/docs/api/reference/api-requests/#paypal-auth-assertion).<blockquote><strong>Note:</strong>For\
+          \ three party transactions in which a partner is managing the API calls\
+          \ on behalf of a merchant, the partner must identify the merchant using\
+          \ either a PayPal-Auth-Assertion header or an access token with target_subject.</blockquote>"
+        explode: false
+        in: header
+        name: PayPal-Auth-Assertion
+        required: false
+        schema:
+          type: string
+        style: simple
+      - description: "The preferred server response upon successful completion of\
+          \ the request. Value is:<ul><li><code>return=minimal</code>. The server\
+          \ returns a minimal response to optimize communication between the API caller\
+          \ and the server. A minimal response includes the <code>id</code>, <code>status</code>\
+          \ and HATEOAS links.</li><li><code>return=representation</code>. The server\
+          \ returns a complete resource representation, including the current state\
+          \ of the resource.</li></ul>"
+        explode: false
+        in: header
+        name: Prefer
+        required: false
+        schema:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/authorization-2'
+          description: A successful request returns the HTTP <code>200 OK</code> status
+            code and a JSON response body that shows authorization details. This response
+            is returned when the Prefer header is set to return=representation.
+        "204":
+          description: A successful request returns the HTTP <code>204 No Content</code>
+            status code with no JSON response body. This response is returned when
+            the Prefer header is set to return=minimal.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_400'
+          description: The request failed because it is not well-formed or is syntactically
+            incorrect or violates schema.
+          x-do-not-generate: true
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsVoidPaymentResponse'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsVoidPayment403Response'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsVoidPayment404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsVoidPayment409Response'
+          description: The request failed because a previous call for the given resource
+            is in progress.
+          x-do-not-generate: true
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizationsVoidPayment422Response'
+          description: The request failed because it either is semantically incorrect
+            or failed business validation.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/payment/authcapture
+      summary: Void authorized payment
+      tags:
+      - authorizations
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-post--v2-payments-authorizations-authorization_id-void
+      x-accepts: application/json
+  /v2/payments/captures/{capture_id}:
+    get:
+      description: "Shows details for a captured payment, by ID."
+      operationId: Captures_showDetails
+      parameters:
+      - description: The PayPal-generated ID for the captured payment to refund.
+        explode: false
+        in: path
+        name: capture_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/capture-2'
+          description: A successful request returns the HTTP <code>200 OK</code> status
+            code and a JSON response body that shows captured payment details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_401'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesShowDetailsResponse'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesShowDetails404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/payment/authcapture
+      summary: Show captured payment details
+      tags:
+      - captures
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-get--v2-payments-captures-capture_id
+      x-accepts: application/json
+  /v2/payments/captures/{capture_id}/refund:
+    post:
+      description: "Refunds a captured payment, by ID. For a full refund, include\
+        \ an empty payload in the JSON request body. For a partial refund, include\
+        \ an <code>amount</code> object in the JSON request body."
+      operationId: Captures_refundPayment
+      parameters:
+      - description: The PayPal-generated ID for the captured payment to refund.
+        explode: false
+        in: path
+        name: capture_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      - description: The server stores keys for 45 days.
+        explode: false
+        in: header
+        name: PayPal-Request-Id
+        required: false
+        schema:
+          type: string
+        style: simple
+      - description: "The preferred server response upon successful completion of\
+          \ the request. Value is:<ul><li><code>return=minimal</code>. The server\
+          \ returns a minimal response to optimize communication between the API caller\
+          \ and the server. A minimal response includes the <code>id</code>, <code>status</code>\
+          \ and HATEOAS links.</li><li><code>return=representation</code>. The server\
+          \ returns a complete resource representation, including the current state\
+          \ of the resource.</li></ul>"
+        explode: false
+        in: header
+        name: Prefer
+        required: false
+        schema:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        style: simple
+      - description: "An API-caller-provided JSON Web Token (JWT) assertion that identifies\
+          \ the merchant. For details, see [PayPal-Auth-Assertion](/docs/api/reference/api-requests/#paypal-auth-assertion).<blockquote><strong>Note:</strong>For\
+          \ three party transactions in which a partner is managing the API calls\
+          \ on behalf of a merchant, the partner must identify the merchant using\
+          \ either a PayPal-Auth-Assertion header or an access token with target_subject.</blockquote>"
+        explode: false
+        in: header
+        name: PayPal-Auth-Assertion
+        required: false
+        schema:
+          type: string
+        style: simple
+      requestBody:
+        content:
+          application/json:
+            examples:
+              refund_request:
+                value:
+                  amount:
+                    value: "10.00"
+                    currency_code: USD
+                  invoice_id: INVOICE-123
+                  note_to_payer: DefectiveProduct
+                  payment_instruction:
+                    platform_fees:
+                    - amount:
+                        currency_code: USD
+                        value: "1.00"
+            schema:
+              $ref: '#/components/schemas/refund_request'
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/refund'
+          description: A successful request returns the HTTP <code>201 Created</code>
+            status code and a JSON response body that shows refund details.
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesRefundPaymentResponse'
+          description: The request failed because it is not well-formed or is syntactically
+            incorrect or violates schema.
+          x-do-not-generate: true
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesRefundPayment401Response'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesRefundPayment403Response'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesRefundPayment404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "409":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesRefundPayment409Response'
+          description: The request failed because a previous call for the given resource
+            is in progress.
+          x-do-not-generate: true
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CapturesRefundPayment422Response'
+          description: The request failed because it either is semantically incorrect
+            or failed business validation.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/refund
+      summary: Refund captured payment
+      tags:
+      - captures
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-post--v2-payments-captures-capture_id-refund
+      x-content-type: application/json
+      x-accepts: application/json
+  /v2/payments/refunds/{refund_id}:
+    get:
+      description: "Shows details for a refund, by ID."
+      operationId: Refunds_details
+      parameters:
+      - description: The PayPal-generated ID for the refund for which to show details.
+        explode: false
+        in: path
+        name: refund_id
+        required: true
+        schema:
+          type: string
+        style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/refund'
+          description: A successful request returns the HTTP <code>200 OK</code> status
+            code and a JSON response body that shows refund details.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundsDetailsResponse'
+          description: "Authentication failed due to missing authorization header,\
+            \ or invalid authentication credentials."
+          x-do-not-generate: true
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundsDetails403Response'
+          description: The request failed because the caller has insufficient permissions.
+          x-do-not-generate: true
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefundsDetails404Response'
+          description: The request failed because the resource does not exist.
+          x-do-not-generate: true
+        "500":
+          description: The request failed because an internal server error occurred.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/error_default'
+          description: The default response.
+      security:
+      - Oauth2:
+        - https://uri.paypal.com/services/payments/refund
+      summary: Show refund details
+      tags:
+      - refunds
+      x-konfig-operation-can-have-single-parameter: true
+      x-konfig-single-parameter-schema: konfig-generated-schema-single-parameter-schema-get--v2-payments-refunds-refund_id
+      x-accepts: application/json
+components:
+  parameters:
+    authorization_id:
+      description: The PayPal-generated ID for the authorized payment to void.
+      explode: false
+      in: path
+      name: authorization_id
+      required: true
+      schema:
+        type: string
+      style: simple
+    paypal_request_id:
+      description: The server stores keys for 45 days.
+      explode: false
+      in: header
+      name: PayPal-Request-Id
+      required: false
+      schema:
+        type: string
+      style: simple
+    prefer:
+      description: "The preferred server response upon successful completion of the\
+        \ request. Value is:<ul><li><code>return=minimal</code>. The server returns\
+        \ a minimal response to optimize communication between the API caller and\
+        \ the server. A minimal response includes the <code>id</code>, <code>status</code>\
+        \ and HATEOAS links.</li><li><code>return=representation</code>. The server\
+        \ returns a complete resource representation, including the current state\
+        \ of the resource.</li></ul>"
+      explode: false
+      in: header
+      name: Prefer
+      required: false
+      schema:
+        default: return=minimal
+        example: return=minimal
+        type: string
+        x-konfig-original-example: return=minimal
+        x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+      style: simple
+    paypal_auth_assertion:
+      description: "An API-caller-provided JSON Web Token (JWT) assertion that identifies\
+        \ the merchant. For details, see [PayPal-Auth-Assertion](/docs/api/reference/api-requests/#paypal-auth-assertion).<blockquote><strong>Note:</strong>For\
+        \ three party transactions in which a partner is managing the API calls on\
+        \ behalf of a merchant, the partner must identify the merchant using either\
+        \ a PayPal-Auth-Assertion header or an access token with target_subject.</blockquote>"
+      explode: false
+      in: header
+      name: PayPal-Auth-Assertion
+      required: false
+      schema:
+        type: string
+      style: simple
+    capture_id:
+      description: The PayPal-generated ID for the captured payment to refund.
+      explode: false
+      in: path
+      name: capture_id
+      required: true
+      schema:
+        type: string
+      style: simple
+    refund_id:
+      description: The PayPal-generated ID for the refund for which to show details.
+      explode: false
+      in: path
+      name: refund_id
+      required: true
+      schema:
+        type: string
+      style: simple
+  responses:
+    default:
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/error_default'
+      description: The default response.
+  schemas:
+    "400":
+      properties:
+        details:
+          items: {}
+          type: array
+    "401":
+      properties:
+        details:
+          items:
+            $ref: '#/components/schemas/INVALID_ACCOUNT_STATUS'
+          type: array
+    "403":
+      properties:
+        details:
+          items:
+            $ref: '#/components/schemas/PERMISSION_DENIED'
+          type: array
+    "404":
+      properties:
+        details:
+          items:
+            $ref: '#/components/schemas/INVALID_RESOURCE_ID'
+          type: array
+    "409":
+      properties:
+        details:
+          items:
+            $ref: '#/components/schemas/PREVIOUS_REQUEST_IN_PROGRESS'
+          type: array
+    "422":
+      properties:
+        details:
+          items: {}
+          type: array
+    error_details:
+      description: The error details. Required for client-side `4XX` errors.
+      properties:
+        description:
+          description: "The human-readable description for an issue. The description\
+            \ can change over the lifetime of an API, so clients must not depend on\
+            \ this value."
+          type: string
+        field:
+          description: "The field that caused the error. If this field is in the body,\
+            \ set this value to the field's JSON pointer value. Required for client-side\
+            \ errors."
+          type: string
+        value:
+          description: The value of the field that caused the error.
+          type: string
+        location:
+          $ref: '#/components/schemas/error_location'
+        issue:
+          description: "The unique, fine-grained application-level error code."
+          type: string
+      required:
+      - issue
+      title: Error Details
+      type: object
+    error_location:
+      default: body
+      description: "The location of the field that caused the error. Value is `body`,\
+        \ `path`, or `query`."
+      enum:
+      - body
+      - path
+      - query
+      example: body
+      type: string
+      x-konfig-original-example: body
+      x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_location
+    error_default: {}
+    error_link_description:
+      description: "The request-related [HATEOAS link](/api/rest/responses/#hateoas-links)\
+        \ information."
+      properties:
+        href:
+          description: "The complete target URL. To make the related call, combine\
+            \ the method with this [URI Template-formatted](https://tools.ietf.org/html/rfc6570)\
+            \ link. For pre-processing, include the `$`, `(`, and `)` characters.\
+            \ The `href` is the key HATEOAS component that links a completed call\
+            \ with a subsequent call."
+          maxLength: 20000
+          minLength: 0
+          pattern: ^.*$
+          type: string
+        rel:
+          description: "The [link relation type](https://tools.ietf.org/html/rfc5988#section-4),\
+            \ which serves as an ID for a link that unambiguously describes the semantics\
+            \ of the link. See [Link Relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml)."
+          maxLength: 100
+          minLength: 0
+          pattern: ^.*$
+          type: string
+        method:
+          description: The HTTP method required to make the related call.
+          enum:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - PATCH
+          maxLength: 6
+          minLength: 3
+          pattern: "^[A-Z]*$"
+          type: string
+      required:
+      - href
+      - rel
+      title: Link Description
+      type: object
+    error_400:
+      description: "Request is not well-formed, syntactically incorrect, or violates\
+        \ schema."
+      properties:
+        name:
+          enum:
+          - INVALID_REQUEST
+          type: string
+        message:
+          enum:
+          - "Request is not well-formed, syntactically incorrect, or violates schema."
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Bad Request Error
+      type: object
+      x-konfig-is-used-in-non-successful-response: true
+      x-do-not-generate: true
+    error_401:
+      description: "Authentication failed due to missing Authorization header, or\
+        \ invalid authentication credentials."
+      properties:
+        name:
+          enum:
+          - AUTHENTICATION_FAILURE
+          type: string
+        message:
+          enum:
+          - "Authentication failed due to missing authorization header, or invalid\
+            \ authentication credentials."
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Unauthorized Error
+      type: object
+      x-konfig-is-used-in-non-successful-response: true
+      x-do-not-generate: true
+    error_403:
+      description: "The client is not authorized to access this resource, although\
+        \ it may have valid credentials. "
+      properties:
+        name:
+          enum:
+          - NOT_AUTHORIZED
+          type: string
+        message:
+          enum:
+          - Authorization failed due to insufficient permissions.
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Not Authorized Error
+      type: object
+    error_404:
+      description: The server has not found anything matching the request URI. This
+        either means that the URI is incorrect or the resource is not available.
+      properties:
+        name:
+          enum:
+          - RESOURCE_NOT_FOUND
+          type: string
+        message:
+          enum:
+          - The specified resource does not exist.
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Not found Error
+      type: object
+    error_409:
+      description: The server has detected a conflict while processing this request.
+      properties:
+        name:
+          enum:
+          - RESOURCE_CONFLICT
+          type: string
+        message:
+          enum:
+          - The server has detected a conflict while processing this request.
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Resource Conflict Error
+      type: object
+    error_415:
+      description: The server does not support the request payload's media type.
+      properties:
+        name:
+          enum:
+          - UNSUPPORTED_MEDIA_TYPE
+          type: string
+        message:
+          enum:
+          - The server does not support the request payload's media type.
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Unsupported Media Type Error
+      type: object
+    error_422:
+      description: The requested action cannot be performed and may require interaction
+        with APIs or processes outside of the current request. This is distinct from
+        a 500 response in that there are no systemic problems limiting the API from
+        performing the request.
+      properties:
+        name:
+          enum:
+          - UNPROCESSABLE_ENTITY
+          type: string
+        message:
+          enum:
+          - "The requested action could not be performed, semantically incorrect,\
+            \ or failed business validation."
+          type: string
+        details:
+          items:
+            $ref: '#/components/schemas/error_details'
+          type: array
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          type: string
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Unprocessable Entity Error
+      type: object
+    error_500:
+      description: "This is either a system or application error, and generally indicates\
+        \ that although the client appeared to provide a correct request, something\
+        \ unexpected has gone wrong on the server."
+      example:
+        name: INTERNAL_SERVER_ERROR
+        message: An internal server error occurred.
+        debug_id: 90957fca61718
+        links:
+        - href: https://developer.paypal.com/api/orders/v2/#error-INTERNAL_SERVER_ERROR
+          rel: information_link
+      properties:
+        name:
+          enum:
+          - INTERNAL_SERVER_ERROR
+          example: INTERNAL_SERVER_ERROR
+          type: string
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_500-properties-name
+        message:
+          enum:
+          - An internal server error occurred.
+          example: An internal server error occurred.
+          type: string
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_500-properties-message
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          example: 90957fca61718
+          type: string
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_500-properties-debug_id
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Internal Server Error
+      type: object
+      x-konfig-original-example:
+        name: INTERNAL_SERVER_ERROR
+        message: An internal server error occurred.
+        debug_id: 90957fca61718
+        links:
+        - href: https://developer.paypal.com/api/orders/v2/#error-INTERNAL_SERVER_ERROR
+          rel: information_link
+      x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_500
+    error_503:
+      description: "The server is temporarily unable to handle the request, for example,\
+        \ because of planned maintenance or downtime."
+      example:
+        name: SERVICE_UNAVAILABLE
+        message: Service Unavailable.
+        debug_id: 90957fca61718
+        information_link: https://developer.paypal.com/docs/api/orders/v2/#error-SERVICE_UNAVAILABLE
+      properties:
+        name:
+          enum:
+          - SERVICE_UNAVAILABLE
+          example: SERVICE_UNAVAILABLE
+          type: string
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_503-properties-name
+        message:
+          enum:
+          - Service Unavailable.
+          example: Service Unavailable.
+          type: string
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_503-properties-message
+        debug_id:
+          description: The PayPal internal ID. Used for correlation purposes.
+          example: 90957fca61718
+          type: string
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_503-properties-debug_id
+        links:
+          description: "An array of request-related [HATEOAS links](https://en.wikipedia.org/wiki/HATEOAS)."
+          items:
+            $ref: '#/components/schemas/error_link_description'
+          maxItems: 10000
+          minItems: 0
+          type: array
+      title: Service Unavailable Error
+      type: object
+      x-konfig-original-example:
+        name: SERVICE_UNAVAILABLE
+        message: Service Unavailable.
+        debug_id: 90957fca61718
+        information_link: https://developer.paypal.com/docs/api/orders/v2/#error-SERVICE_UNAVAILABLE
+      x-konfig-generated-schema: konfig-generated-schema-components-schemas-error_503
+    authorization_status_details:
+      description: The details of the authorized payment status.
+      properties:
+        reason:
+          description: The reason why the authorized status is `PENDING`.
+          enum:
+          - PENDING_REVIEW
+          maxLength: 24
+          minLength: 1
+          pattern: "^[A-Z_]+$"
+          type: string
+      title: Auhorization Status Details
+      type: object
+    authorization_status:
+      description: The status fields for an authorized payment.
+      properties:
+        status:
+          description: The status for the authorized payment.
+          enum:
+          - CREATED
+          - CAPTURED
+          - DENIED
+          - PARTIALLY_CAPTURED
+          - VOIDED
+          - PENDING
+          readOnly: true
+          type: string
+        status_details:
+          $ref: '#/components/schemas/authorization_status_details'
+      title: Authorization Status
+      type: object
+    currency_code:
+      description: "The [three-character ISO-4217 currency code](https://raw.githubusercontent.com)\
+        \ that identifies the currency."
+      format: ppaas_common_currency_code_v2
+      maxLength: 3
+      minLength: 3
+      type: string
+    money:
+      description: "The currency and amount for a financial transaction, such as a\
+        \ balance or payment due."
+      properties:
+        currency_code:
+          description: "The [three-character ISO-4217 currency code](https://raw.githubusercontent.com)\
+            \ that identifies the currency."
+          format: ppaas_common_currency_code_v2
+          maxLength: 3
+          minLength: 3
+          type: string
+        value:
+          description: "The value, which might be:<ul><li>An integer for currencies\
+            \ like `JPY` that are not typically fractional.</li><li>A decimal fraction\
+            \ for currencies like `TND` that are subdivided into thousandths.</li></ul>For\
+            \ the required number of decimal places for a currency code, see [Currency\
+            \ Codes](https://raw.githubusercontent.com)."
+          maxLength: 32
+          pattern: "^((-?[0-9]+)|(-?([0-9]+)?[.][0-9]+))$"
+          type: string
+      required:
+      - currency_code
+      - value
+      title: Money
+      type: object
+    card_brand:
+      description: "The card network or brand. Applies to credit, debit, gift, and\
+        \ payment cards."
+      enum:
+      - VISA
+      - MASTERCARD
+      - DISCOVER
+      - AMEX
+      - SOLO
+      - JCB
+      - STAR
+      - DELTA
+      - SWITCH
+      - MAESTRO
+      - CB_NATIONALE
+      - CONFIGOGA
+      - CONFIDIS
+      - ELECTRON
+      - CETELEM
+      - CHINA_UNION_PAY
+      maxLength: 255
+      minLength: 1
+      pattern: "^[A-Z_]+$"
+      title: Card Brand
+      type: string
+    network_transaction_reference:
+      description: Reference values used by the card network to identify a transaction.
+      properties:
+        id:
+          description: "Transaction reference id returned by the scheme. For Visa\
+            \ and Amex, this is the \"Tran id\" field in response. For MasterCard,\
+            \ this is the \"BankNet reference id\" field in response. For Discover,\
+            \ this is the \"NRID\" field in response. The pattern we expect for this\
+            \ field from Visa/Amex/CB/Discover is numeric, Mastercard/BNPP is alphanumeric\
+            \ and Paysecure is alphanumeric with special character -."
+          maxLength: 36
+          minLength: 9
+          pattern: "^[a-zA-Z0-9-]+$"
+          type: string
+        date:
+          description: The date that the transaction was authorized by the scheme.
+            This field may not be returned for all networks. MasterCard refers to
+            this field as "BankNet reference date.
+          maxLength: 4
+          minLength: 4
+          pattern: "^[0-9]+$"
+          type: string
+        network:
+          $ref: '#/components/schemas/card_brand'
+        acquirer_reference_number:
+          description: "Reference ID issued for the card transaction. This ID can\
+            \ be used to track the transaction across processors, card brands and\
+            \ issuing banks."
+          maxLength: 36
+          minLength: 1
+          pattern: "^[a-zA-Z0-9]+$"
+          type: string
+      required:
+      - id
+      title: Network Transaction Reference
+      type: object
+    seller_protection:
+      description: "The level of protection offered as defined by [PayPal Seller Protection\
+        \ for Merchants](https://www.paypal.com/us/webapps/mpp/security/seller-protection)."
+      properties:
+        status:
+          description: "Indicates whether the transaction is eligible for seller protection.\
+            \ For information, see [PayPal Seller Protection for Merchants](https://www.paypal.com/us/webapps/mpp/security/seller-protection)."
+          enum:
+          - ELIGIBLE
+          - PARTIALLY_ELIGIBLE
+          - NOT_ELIGIBLE
+          readOnly: true
+          type: string
+        dispute_categories:
+          description: An array of conditions that are covered for the transaction.
+          items:
+            description: The condition that is covered for the transaction.
+            enum:
+            - ITEM_NOT_RECEIVED
+            - UNAUTHORIZED_TRANSACTION
+            type: string
+          readOnly: true
+          type: array
+      title: Seller Protection
+      type: object
+    date_time:
+      description: "The date and time, in [Internet date and time format](https://tools.ietf.org/html/rfc3339#section-5.6).\
+        \ Seconds are required while fractional seconds are optional.<blockquote><strong>Note:</strong>\
+        \ The regular expression provides guidance but does not reject all invalid\
+        \ dates.</blockquote>"
+      format: ppaas_date_time_v3
+      maxLength: 64
+      minLength: 20
+      pattern: "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])[T,t]([0-1][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)([.][0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$"
+      type: string
+    link_description:
+      description: "The request-related [HATEOAS link](/api/rest/responses/#hateoas-links)\
+        \ information."
+      properties:
+        href:
+          description: "The complete target URL. To make the related call, combine\
+            \ the method with this [URI Template-formatted](https://tools.ietf.org/html/rfc6570)\
+            \ link. For pre-processing, include the `$`, `(`, and `)` characters.\
+            \ The `href` is the key HATEOAS component that links a completed call\
+            \ with a subsequent call."
+          type: string
+        rel:
+          description: "The [link relation type](https://tools.ietf.org/html/rfc5988#section-4),\
+            \ which serves as an ID for a link that unambiguously describes the semantics\
+            \ of the link. See [Link Relations](https://www.iana.org/assignments/link-relations/link-relations.xhtml)."
+          type: string
+        method:
+          description: The HTTP method required to make the related call.
+          enum:
+          - GET
+          - POST
+          - PUT
+          - DELETE
+          - HEAD
+          - CONNECT
+          - OPTIONS
+          - PATCH
+          type: string
+      required:
+      - href
+      - rel
+      title: Link Description
+      type: object
+    activity_timestamps:
+      description: "The date and time stamps that are common to authorized payment,\
+        \ captured payment, and refund transactions."
+      properties:
+        create_time:
+          description: "The date and time, in [Internet date and time format](https://tools.ietf.org/html/rfc3339#section-5.6).\
+            \ Seconds are required while fractional seconds are optional.<blockquote><strong>Note:</strong>\
+            \ The regular expression provides guidance but does not reject all invalid\
+            \ dates.</blockquote>"
+          format: ppaas_date_time_v3
+          maxLength: 64
+          minLength: 20
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])[T,t]([0-1][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)([.][0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$"
+          type: string
+        update_time:
+          description: "The date and time, in [Internet date and time format](https://tools.ietf.org/html/rfc3339#section-5.6).\
+            \ Seconds are required while fractional seconds are optional.<blockquote><strong>Note:</strong>\
+            \ The regular expression provides guidance but does not reject all invalid\
+            \ dates.</blockquote>"
+          format: ppaas_date_time_v3
+          maxLength: 64
+          minLength: 20
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])[T,t]([0-1][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)([.][0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$"
+          type: string
+      title: Transaction Date and Time Stamps
+      type: object
+    authorization:
+      allOf:
+      - $ref: '#/components/schemas/authorization_status'
+      - $ref: '#/components/schemas/authorization_allOf'
+      - $ref: '#/components/schemas/activity_timestamps'
+      description: The authorized payment transaction.
+      title: Authorization
+      type: object
+    related_ids:
+      description: Identifiers related to a specific resource.
+      properties:
+        order_id:
+          description: Order ID related to the resource.
+          maxLength: 20
+          minLength: 1
+          pattern: "^[A-Z0-9]+$"
+          type: string
+        authorization_id:
+          description: Authorization ID related to the resource.
+          maxLength: 20
+          minLength: 1
+          pattern: "^[A-Z0-9]+$"
+          type: string
+        capture_id:
+          description: Capture ID related to the resource.
+          maxLength: 20
+          minLength: 1
+          pattern: "^[A-Z0-9]+$"
+          type: string
+      title: Related Identifiers
+      type: object
+    supplementary_data:
+      description: The supplementary data.
+      properties:
+        related_ids:
+          $ref: '#/components/schemas/related_ids'
+      title: Supplementary Data
+      type: object
+    email:
+      description: "The internationalized email address.<blockquote><strong>Note:</strong>\
+        \ Up to 64 characters are allowed before and 255 characters are allowed after\
+        \ the <code>@</code> sign. However, the generally accepted maximum length\
+        \ for an email address is 254 characters. The pattern verifies that an unquoted\
+        \ <code>@</code> sign exists.</blockquote>"
+      format: merchant_common_email_address_v2
+      maxLength: 254
+      minLength: 3
+      pattern: "(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|(?:[\\\
+        x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\[\\x01-\\x09\\\
+        x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\\\
+        .)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\\
+        .){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\\\
+        x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\[\\x01-\\x09\\x0b\\\
+        x0c\\x0e-\\x7f])+)\\])"
+      type: string
+    account_id:
+      description: The account identifier for a PayPal account.
+      format: ppaas_payer_id_v3
+      maxLength: 13
+      minLength: 13
+      pattern: "^[2-9A-HJ-NP-Z]{13}$"
+      title: PayPal Account Identifier
+      type: string
+    payee_base:
+      description: The details for the merchant who receives the funds and fulfills
+        the order. The merchant is also known as the payee.
+      properties:
+        email_address:
+          description: "The internationalized email address.<blockquote><strong>Note:</strong>\
+            \ Up to 64 characters are allowed before and 255 characters are allowed\
+            \ after the <code>@</code> sign. However, the generally accepted maximum\
+            \ length for an email address is 254 characters. The pattern verifies\
+            \ that an unquoted <code>@</code> sign exists.</blockquote>"
+          format: merchant_common_email_address_v2
+          maxLength: 254
+          minLength: 3
+          pattern: "(?:[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*|(?:[\\\
+            x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21\\x23-\\x5b\\x5d-\\x7f]|\\[\\x01-\\\
+            x09\\x0b\\x0c\\x0e-\\x7f])*\")@(?:(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?\\\
+            .)+[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?|\\[(?:(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9]))\\\
+            .){3}(?:(2(5[0-5]|[0-4][0-9])|1[0-9][0-9]|[1-9]?[0-9])|[a-zA-Z0-9-]*[a-zA-Z0-9]:(?:[\\\
+            x01-\\x08\\x0b\\x0c\\x0e-\\x1f\\x21-\\x5a\\x53-\\x7f]|\\[\\x01-\\x09\\\
+            x0b\\x0c\\x0e-\\x7f])+)\\])"
+          type: string
+        merchant_id:
+          description: The account identifier for a PayPal account.
+          format: ppaas_payer_id_v3
+          maxLength: 13
+          minLength: 13
+          pattern: "^[2-9A-HJ-NP-Z]{13}$"
+          title: PayPal Account Identifier
+          type: string
+      title: Merchant Base
+      type: object
+    authorization-2:
+      allOf:
+      - $ref: '#/components/schemas/authorization'
+      - $ref: '#/components/schemas/authorization_2_allOf'
+      description: The authorized payment transaction.
+      title: Authorization
+      type: object
+      x-konfig-is-used-in-successful-response: true
+    supplementary_purchase_data:
+      description: "The capture identification-related fields. Includes the invoice\
+        \ ID, custom ID, note to payer, and soft descriptor."
+      properties:
+        invoice_id:
+          description: The API caller-provided external invoice number for this order.
+            Appears in both the payer's transaction history and the emails that the
+            payer receives.
+          maxLength: 127
+          minLength: 1
+          pattern: "^.{1,127}$"
+          type: string
+        note_to_payer:
+          description: An informational note about this settlement. Appears in both
+            the payer's transaction history and the emails that the payer receives.
+          maxLength: 255
+          minLength: 1
+          pattern: "^.{1,255}$"
+          type: string
+      title: Capture Identifier
+      type: object
+    platform_fee:
+      description: "The platform or partner fee, commission, or brokerage fee that\
+        \ is associated with the transaction. Not a separate or isolated transaction\
+        \ leg from the external perspective. The platform fee is limited in scope\
+        \ and is always associated with the original payment for the purchase unit."
+      properties:
+        amount:
+          $ref: '#/components/schemas/money'
+        payee:
+          $ref: '#/components/schemas/payee_base'
+      required:
+      - amount
+      title: Platform Fee
+      type: object
+    disbursement_mode:
+      default: INSTANT
+      description: The funds that are held on behalf of the merchant.
+      enum:
+      - INSTANT
+      - DELAYED
+      example: INSTANT
+      maxLength: 16
+      minLength: 1
+      pattern: "^[A-Z_]+$"
+      title: Disbursement Mode
+      type: string
+      x-konfig-original-example: INSTANT
+      x-konfig-generated-schema: konfig-generated-schema-components-schemas-disbursement_mode
+    payment_instruction:
+      description: Any additional payment instructions to be consider during payment
+        processing. This processing instruction is applicable for Capturing an order
+        or Authorizing an Order.
+      properties:
+        platform_fees:
+          description: "An array of various fees, commissions, tips, or donations.\
+            \ This field is only applicable to merchants that been enabled for PayPal\
+            \ Commerce Platform for Marketplaces and Platforms capability."
+          items:
+            $ref: '#/components/schemas/platform_fee'
+          maxItems: 1
+          minItems: 0
+          type: array
+        disbursement_mode:
+          $ref: '#/components/schemas/disbursement_mode'
+        payee_pricing_tier_id:
+          description: This field is only enabled for selected merchants/partners
+            to use and provides the ability to trigger a specific pricing rate/plan
+            for a payment transaction. The list of eligible 'payee_pricing_tier_id'
+            would be provided to you by your Account Manager. Specifying values other
+            than the one provided to you by your account manager would result in an
+            error.
+          maxLength: 20
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        payee_receivable_fx_rate_id:
+          description: FX identifier generated returned by PayPal to be used for payment
+            processing in order to honor FX rate (for eligible integrations) to be
+            used when amount is settled/received into the payee account.
+          maxLength: 4000
+          minLength: 1
+          pattern: ^.*$
+          type: string
+      title: Payment Instruction
+      type: object
+    capture_request:
+      allOf:
+      - $ref: '#/components/schemas/supplementary_purchase_data'
+      - $ref: '#/components/schemas/capture_request_allOf'
+      description: Captures either a portion or the full authorized amount of an authorized
+        payment.
+      example:
+        amount:
+          value: "10.99"
+          currency_code: USD
+        invoice_id: INVOICE-123
+        final_capture: true
+        note_to_payer: "If the ordered color is not available, we will substitute\
+          \ with a different color free of charge."
+        soft_descriptor: Bob's Custom Sweaters
+      properties:
+        amount:
+          properties:
+            value:
+              example: "10.99"
+              type: string
+              x-konfig-original-example: "10.99"
+              x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-amount-properties-value
+            currency_code:
+              example: USD
+              type: string
+              x-konfig-original-example: USD
+              x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-amount-properties-currency_code
+          type: object
+        invoice_id:
+          example: INVOICE-123
+          type: string
+          x-konfig-original-example: INVOICE-123
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-invoice_id
+        final_capture:
+          example: true
+          type: boolean
+          x-konfig-original-example: true
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-final_capture
+        note_to_payer:
+          example: "If the ordered color is not available, we will substitute with\
+            \ a different color free of charge."
+          type: string
+          x-konfig-original-example: "If the ordered color is not available, we will\
+            \ substitute with a different color free of charge."
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-note_to_payer
+        soft_descriptor:
+          example: Bob's Custom Sweaters
+          type: string
+          x-konfig-original-example: Bob's Custom Sweaters
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-soft_descriptor
+      title: Capture Request
+      type: object
+      x-konfig-original-example:
+        amount:
+          value: "10.99"
+          currency_code: USD
+        invoice_id: INVOICE-123
+        final_capture: true
+        note_to_payer: "If the ordered color is not available, we will substitute\
+          \ with a different color free of charge."
+        soft_descriptor: Bob's Custom Sweaters
+      x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request
+    capture_status_details:
+      description: The details of the captured payment status.
+      properties:
+        reason:
+          description: The reason why the captured payment status is `PENDING` or
+            `DENIED`.
+          enum:
+          - BUYER_COMPLAINT
+          - CHARGEBACK
+          - ECHECK
+          - INTERNATIONAL_WITHDRAWAL
+          - OTHER
+          - PENDING_REVIEW
+          - RECEIVING_PREFERENCE_MANDATES_MANUAL_ACTION
+          - REFUNDED
+          - TRANSACTION_APPROVED_AWAITING_FUNDING
+          - UNILATERAL
+          - VERIFICATION_REQUIRED
+          maxLength: 64
+          minLength: 1
+          pattern: "^[A-Z_]+$"
+          type: string
+      title: Capture Status Details
+      type: object
+    capture_status:
+      description: The status of a captured payment.
+      properties:
+        status:
+          description: The status of the captured payment.
+          enum:
+          - COMPLETED
+          - DECLINED
+          - PARTIALLY_REFUNDED
+          - PENDING
+          - REFUNDED
+          - FAILED
+          readOnly: true
+          type: string
+        status_details:
+          $ref: '#/components/schemas/capture_status_details'
+      title: Capture Status
+      type: object
+    exchange_rate:
+      description: The exchange rate that determines the amount to convert from one
+        currency to another currency.
+      properties:
+        source_currency:
+          description: "The [three-character ISO-4217 currency code](https://raw.githubusercontent.com)\
+            \ that identifies the currency."
+          format: ppaas_common_currency_code_v2
+          maxLength: 3
+          minLength: 3
+          type: string
+        target_currency:
+          description: "The [three-character ISO-4217 currency code](https://raw.githubusercontent.com)\
+            \ that identifies the currency."
+          format: ppaas_common_currency_code_v2
+          maxLength: 3
+          minLength: 3
+          type: string
+        value:
+          description: The target currency amount. Equivalent to one unit of the source
+            currency. Formatted as integer or decimal value with one to 15 digits
+            to the right of the decimal point.
+          type: string
+      readOnly: true
+      title: Exchange Rate
+      type: object
+    seller_receivable_breakdown:
+      description: The detailed breakdown of the capture activity. This is not available
+        for transactions that are in pending state.
+      properties:
+        gross_amount:
+          $ref: '#/components/schemas/money'
+        paypal_fee:
+          $ref: '#/components/schemas/money'
+        paypal_fee_in_receivable_currency:
+          $ref: '#/components/schemas/money'
+        net_amount:
+          $ref: '#/components/schemas/money'
+        receivable_amount:
+          $ref: '#/components/schemas/money'
+        exchange_rate:
+          $ref: '#/components/schemas/exchange_rate'
+        platform_fees:
+          description: "An array of platform or partner fees, commissions, or brokerage\
+            \ fees that associated with the captured payment."
+          items:
+            $ref: '#/components/schemas/platform_fee'
+          maxItems: 1
+          minItems: 0
+          type: array
+      required:
+      - gross_amount
+      title: Seller Receivable Breakdown
+      type: object
+    processor_response:
+      description: "The processor response information for payment requests, such\
+        \ as direct credit card transactions."
+      properties:
+        avs_code:
+          description: "The address verification code for Visa, Discover, Mastercard,\
+            \ or American Express transactions."
+          enum:
+          - A
+          - B
+          - C
+          - D
+          - E
+          - F
+          - G
+          - I
+          - M
+          - "N"
+          - P
+          - R
+          - S
+          - U
+          - W
+          - X
+          - "Y"
+          - Z
+          - "Null"
+          - "0"
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          readOnly: true
+          type: string
+        cvv_code:
+          description: "The card verification value code for for Visa, Discover, Mastercard,\
+            \ or American Express."
+          enum:
+          - E
+          - I
+          - M
+          - "N"
+          - P
+          - S
+          - U
+          - X
+          - All others
+          - "0"
+          - "1"
+          - "2"
+          - "3"
+          - "4"
+          readOnly: true
+          type: string
+        response_code:
+          description: Processor response code for the non-PayPal payment processor
+            errors.
+          enum:
+          - "0000"
+          - 00N7
+          - "0100"
+          - "0390"
+          - "0500"
+          - "0580"
+          - "0800"
+          - "0880"
+          - "0890"
+          - "0960"
+          - 0R00
+          - "1000"
+          - 10BR
+          - "1300"
+          - "1310"
+          - "1312"
+          - "1317"
+          - "1320"
+          - "1330"
+          - "1335"
+          - "1340"
+          - "1350"
+          - "1352"
+          - "1360"
+          - "1370"
+          - "1380"
+          - "1382"
+          - "1384"
+          - "1390"
+          - "1393"
+          - "5100"
+          - "5110"
+          - "5120"
+          - "5130"
+          - "5135"
+          - "5140"
+          - "5150"
+          - "5160"
+          - "5170"
+          - "5180"
+          - "5190"
+          - "5200"
+          - "5210"
+          - "5400"
+          - "5500"
+          - "5650"
+          - "5700"
+          - "5710"
+          - "5800"
+          - "5900"
+          - "5910"
+          - "5920"
+          - "5930"
+          - "5950"
+          - "6300"
+          - "7600"
+          - "7700"
+          - "7710"
+          - "7800"
+          - "7900"
+          - "8000"
+          - "8010"
+          - "8020"
+          - "8030"
+          - "8100"
+          - "8110"
+          - "8220"
+          - "9100"
+          - "9500"
+          - "9510"
+          - "9520"
+          - "9530"
+          - "9540"
+          - "9600"
+          - PCNR
+          - PCVV
+          - PP06
+          - PPRN
+          - PPAD
+          - PPAB
+          - PPAE
+          - PPAG
+          - PPAI
+          - PPAR
+          - PPAU
+          - PPAV
+          - PPAX
+          - PPBG
+          - PPC2
+          - PPCE
+          - PPCO
+          - PPCR
+          - PPCT
+          - PPCU
+          - PPD3
+          - PPDC
+          - PPDI
+          - PPDV
+          - PPDT
+          - PPEF
+          - PPEL
+          - PPER
+          - PPEX
+          - PPFE
+          - PPFI
+          - PPFR
+          - PPFV
+          - PPGR
+          - PPH1
+          - PPIF
+          - PPII
+          - PPIM
+          - PPIT
+          - PPLR
+          - PPLS
+          - PPMB
+          - PPMC
+          - PPMD
+          - PPNC
+          - PPNL
+          - PPNM
+          - PPNT
+          - PPPH
+          - PPPI
+          - PPPM
+          - PPQC
+          - PPRE
+          - PPRF
+          - PPRR
+          - PPS0
+          - PPS1
+          - PPS2
+          - PPS3
+          - PPS4
+          - PPS5
+          - PPS6
+          - PPSC
+          - PPSD
+          - PPSE
+          - PPTE
+          - PPTF
+          - PPTI
+          - PPTR
+          - PPTT
+          - PPTV
+          - PPUA
+          - PPUC
+          - PPUE
+          - PPUI
+          - PPUP
+          - PPUR
+          - PPVC
+          - PPVE
+          - PPVT
+          readOnly: true
+          type: string
+        payment_advice_code:
+          description: "The declined payment transactions might have payment advice\
+            \ codes. The card networks, like Visa and Mastercard, return payment advice\
+            \ codes."
+          enum:
+          - "01"
+          - "02"
+          - "03"
+          - "21"
+          readOnly: true
+          type: string
+      title: Processor Response
+      type: object
+    capture:
+      allOf:
+      - $ref: '#/components/schemas/capture_status'
+      - $ref: '#/components/schemas/capture_allOf'
+      - $ref: '#/components/schemas/activity_timestamps'
+      description: A captured payment.
+      title: Capture
+      type: object
+    capture-2:
+      allOf:
+      - $ref: '#/components/schemas/capture'
+      - $ref: '#/components/schemas/authorization_2_allOf'
+      description: A captured payment.
+      title: Capture
+      type: object
+      x-konfig-is-used-in-successful-response: true
+    reauthorize_request:
+      description: "Reauthorizes an authorized PayPal account payment, by ID. To ensure\
+        \ that funds are still available, reauthorize a payment after its initial\
+        \ three-day honor period expires. You can reauthorize a payment only once\
+        \ from days four to 29.<br/><br/>If 30 days have transpired since the date\
+        \ of the original authorization, you must create an authorized payment instead\
+        \ of reauthorizing the original authorized payment.<br/><br/>A reauthorized\
+        \ payment itself has a new honor period of three days.<br/><br/>You can reauthorize\
+        \ an authorized payment once. The allowed amount depends on context and geography,\
+        \ for example in US it is up to 115% of the original authorized amount, not\
+        \ to exceed an increase of $75 USD.<br/><br/>Supports only the `amount` request\
+        \ parameter.<blockquote><strong>Note:</strong> This request is currently not\
+        \ supported for Partner use cases.</blockquote>"
+      properties:
+        amount:
+          $ref: '#/components/schemas/money'
+      title: Reauthorize Request
+      type: object
+    authorizations.reauthorize-400:
+      properties:
+        details:
+          items: {}
+          type: array
+    authorizations.reauthorize-422:
+      properties:
+        details:
+          items: {}
+          type: array
+    authorizations.void-422:
+      properties:
+        details:
+          items: {}
+          type: array
+    payment_instruction-2:
+      description: Any additional payments instructions during refund payment processing.
+        This object is only applicable to merchants that have been enabled for PayPal
+        Commerce Platform for Marketplaces and Platforms capability. Please speak
+        to your account manager if you want to use this capability.
+      properties:
+        platform_fees:
+          description: Specifies the amount that the API caller will contribute to
+            the refund being processed. The amount needs to be lower than platform_fees
+            amount originally captured or the amount that is remaining if multiple
+            refunds have been processed. This field is only applicable to merchants
+            that have been enabled for PayPal Commerce Platform for Marketplaces and
+            Platforms capability. Please speak to your account manager if you want
+            to use this capability.
+          items:
+            $ref: '#/components/schemas/platform_fee'
+          maxItems: 1
+          minItems: 0
+          type: array
+      title: Payment Instruction
+      type: object
+    refund_request:
+      description: "Refunds a captured payment, by ID. For a full refund, include\
+        \ an empty request body. For a partial refund, include an <code>amount</code>\
+        \ object in the request body."
+      properties:
+        amount:
+          $ref: '#/components/schemas/money'
+        custom_id:
+          description: The API caller-provided external ID. Used to reconcile API
+            caller-initiated transactions with PayPal transactions. Appears in transaction
+            and settlement reports. The pattern is defined by an external party and
+            supports Unicode.
+          maxLength: 127
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        invoice_id:
+          description: The API caller-provided external invoice ID for this order.
+            The pattern is defined by an external party and supports Unicode.
+          maxLength: 127
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        note_to_payer:
+          description: The reason for the refund. Appears in both the payer's transaction
+            history and the emails that the payer receives. The pattern is defined
+            by an external party and supports Unicode.
+          maxLength: 255
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        payment_instruction:
+          $ref: '#/components/schemas/payment_instruction-2'
+      title: Refund Request
+      type: object
+    refund_status_details:
+      description: The details of the refund status.
+      properties:
+        reason:
+          description: The reason why the refund has the `PENDING` or `FAILED` status.
+          enum:
+          - ECHECK
+          type: string
+      title: Refund Status Details
+      type: object
+    refund_status:
+      description: The refund status.
+      properties:
+        status:
+          description: The status of the refund.
+          enum:
+          - CANCELLED
+          - FAILED
+          - PENDING
+          - COMPLETED
+          readOnly: true
+          type: string
+        status_details:
+          $ref: '#/components/schemas/refund_status_details'
+      title: Refund Status
+      type: object
+    net_amount_breakdown_item:
+      description: The net amount. Returned when the currency of the refund is different
+        from the currency of the PayPal account where the merchant holds their funds.
+      properties:
+        payable_amount:
+          $ref: '#/components/schemas/money'
+        converted_amount:
+          $ref: '#/components/schemas/money'
+        exchange_rate:
+          $ref: '#/components/schemas/exchange_rate'
+      title: Net Amount Breakdown Item
+      type: object
+    refund:
+      allOf:
+      - $ref: '#/components/schemas/refund_status'
+      - $ref: '#/components/schemas/refund_allOf'
+      - $ref: '#/components/schemas/activity_timestamps'
+      description: The refund information.
+      title: Refund
+      type: object
+      x-konfig-is-used-in-successful-response: true
+    captures.refund-400:
+      properties:
+        details:
+          items: {}
+          type: array
+    captures.refund-422:
+      properties:
+        details:
+          items: {}
+          type: array
+    AuthorizationsShowDetailsResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsShowDetails404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsCapturePaymentResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_400'
+      - $ref: '#/components/schemas/400'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsCapturePayment403Response:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsCapturePayment404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsCapturePayment422Response:
+      allOf:
+      - $ref: '#/components/schemas/error_422'
+      - $ref: '#/components/schemas/422'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsReauthorizePaymentResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_400'
+      - $ref: '#/components/schemas/authorizations.reauthorize-400'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsReauthorizePayment403Response:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsReauthorizePayment404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsReauthorizePayment422Response:
+      allOf:
+      - $ref: '#/components/schemas/error_422'
+      - $ref: '#/components/schemas/authorizations.reauthorize-422'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsVoidPaymentResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_401'
+      - $ref: '#/components/schemas/401'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsVoidPayment403Response:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsVoidPayment404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsVoidPayment409Response:
+      allOf:
+      - $ref: '#/components/schemas/error_409'
+      - $ref: '#/components/schemas/409'
+      x-konfig-is-used-in-non-successful-response: true
+    AuthorizationsVoidPayment422Response:
+      allOf:
+      - $ref: '#/components/schemas/error_422'
+      - $ref: '#/components/schemas/authorizations.void-422'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesShowDetailsResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesShowDetails404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesRefundPaymentResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_400'
+      - $ref: '#/components/schemas/captures.refund-400'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesRefundPayment401Response:
+      allOf:
+      - $ref: '#/components/schemas/error_401'
+      - $ref: '#/components/schemas/401'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesRefundPayment403Response:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesRefundPayment404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesRefundPayment409Response:
+      allOf:
+      - $ref: '#/components/schemas/error_409'
+      - $ref: '#/components/schemas/409'
+      x-konfig-is-used-in-non-successful-response: true
+    CapturesRefundPayment422Response:
+      allOf:
+      - $ref: '#/components/schemas/error_422'
+      - $ref: '#/components/schemas/captures.refund-422'
+      x-konfig-is-used-in-non-successful-response: true
+    RefundsDetailsResponse:
+      allOf:
+      - $ref: '#/components/schemas/error_401'
+      - $ref: '#/components/schemas/401'
+      x-konfig-is-used-in-non-successful-response: true
+    RefundsDetails403Response:
+      allOf:
+      - $ref: '#/components/schemas/error_403'
+      - $ref: '#/components/schemas/403'
+      x-konfig-is-used-in-non-successful-response: true
+    RefundsDetails404Response:
+      allOf:
+      - $ref: '#/components/schemas/error_404'
+      - $ref: '#/components/schemas/404'
+      x-konfig-is-used-in-non-successful-response: true
+    konfig-generated-schema-components-parameters-prefer-schema:
+      example: return=minimal
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_location:
+      example: body
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_500:
+      example:
+        name: INTERNAL_SERVER_ERROR
+        message: An internal server error occurred.
+        debug_id: 90957fca61718
+        links:
+        - href: https://developer.paypal.com/api/orders/v2/#error-INTERNAL_SERVER_ERROR
+          rel: information_link
+      properties:
+        name:
+          example: INTERNAL_SERVER_ERROR
+          type: string
+        message:
+          example: An internal server error occurred.
+          type: string
+        debug_id:
+          example: 90957fca61718
+          type: string
+        links:
+          items:
+            properties:
+              href:
+                example: https://developer.paypal.com/api/orders/v2/#error-INTERNAL_SERVER_ERROR
+                type: string
+              rel:
+                example: information_link
+                type: string
+            type: object
+          type: array
+      type: object
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_500-properties-name:
+      example: INTERNAL_SERVER_ERROR
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_500-properties-message:
+      example: An internal server error occurred.
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_500-properties-debug_id:
+      example: 90957fca61718
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_503:
+      example:
+        name: SERVICE_UNAVAILABLE
+        message: Service Unavailable.
+        debug_id: 90957fca61718
+        information_link: https://developer.paypal.com/docs/api/orders/v2/#error-SERVICE_UNAVAILABLE
+      properties:
+        name:
+          example: SERVICE_UNAVAILABLE
+          type: string
+        message:
+          example: Service Unavailable.
+          type: string
+        debug_id:
+          example: 90957fca61718
+          type: string
+        information_link:
+          example: https://developer.paypal.com/docs/api/orders/v2/#error-SERVICE_UNAVAILABLE
+          type: string
+      type: object
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_503-properties-name:
+      example: SERVICE_UNAVAILABLE
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_503-properties-message:
+      example: Service Unavailable.
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-error_503-properties-debug_id:
+      example: 90957fca61718
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-disbursement_mode:
+      example: INSTANT
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request:
+      example:
+        amount:
+          value: "10.99"
+          currency_code: USD
+        invoice_id: INVOICE-123
+        final_capture: true
+        note_to_payer: "If the ordered color is not available, we will substitute\
+          \ with a different color free of charge."
+        soft_descriptor: Bob's Custom Sweaters
+      properties:
+        amount:
+          properties:
+            value:
+              example: "10.99"
+              type: string
+            currency_code:
+              example: USD
+              type: string
+          type: object
+        invoice_id:
+          example: INVOICE-123
+          type: string
+        final_capture:
+          example: true
+          type: boolean
+        note_to_payer:
+          example: "If the ordered color is not available, we will substitute with\
+            \ a different color free of charge."
+          type: string
+        soft_descriptor:
+          example: Bob's Custom Sweaters
+          type: string
+      type: object
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-allOf-1-properties-final_capture:
+      example: false
+      type: boolean
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-properties-amount-properties-value:
+      example: "10.99"
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-properties-amount-properties-currency_code:
+      example: USD
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-properties-invoice_id:
+      example: INVOICE-123
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-properties-final_capture:
+      example: true
+      type: boolean
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-properties-note_to_payer:
+      example: "If the ordered color is not available, we will substitute with a different\
+        \ color free of charge."
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture_request-properties-soft_descriptor:
+      example: Bob's Custom Sweaters
+      type: string
+      x-do-not-generate: true
+    konfig-generated-schema-components-schemas-capture-allOf-1-properties-final_capture:
+      example: false
+      type: boolean
+      x-do-not-generate: true
+    konfig-generated-schema-single-parameter-schema-get--v2-payments-authorizations-authorization_id:
+      properties:
+        authorization_id:
+          type: string
+      required:
+      - authorization_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - authorization_id
+    konfig-generated-schema-single-parameter-schema-post--v2-payments-authorizations-authorization_id-capture:
+      properties:
+        authorization_id:
+          type: string
+        PayPal-Request-Id:
+          type: string
+        Prefer:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        amount:
+          properties:
+            value:
+              example: "10.99"
+              type: string
+              x-konfig-original-example: "10.99"
+              x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-amount-properties-value
+            currency_code:
+              example: USD
+              type: string
+              x-konfig-original-example: USD
+              x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-amount-properties-currency_code
+          type: object
+        invoice_id:
+          example: INVOICE-123
+          type: string
+          x-konfig-original-example: INVOICE-123
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-invoice_id
+        final_capture:
+          example: true
+          type: boolean
+          x-konfig-original-example: true
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-final_capture
+        note_to_payer:
+          example: "If the ordered color is not available, we will substitute with\
+            \ a different color free of charge."
+          type: string
+          x-konfig-original-example: "If the ordered color is not available, we will\
+            \ substitute with a different color free of charge."
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-note_to_payer
+        soft_descriptor:
+          example: Bob's Custom Sweaters
+          type: string
+          x-konfig-original-example: Bob's Custom Sweaters
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-properties-soft_descriptor
+      required:
+      - authorization_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - authorization_id
+      - PayPal-Request-Id
+      - Prefer
+    konfig-generated-schema-single-parameter-schema-post--v2-payments-authorizations-authorization_id-reauthorize:
+      properties:
+        authorization_id:
+          type: string
+        PayPal-Request-Id:
+          type: string
+        Prefer:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        amount:
+          $ref: '#/components/schemas/money'
+      required:
+      - authorization_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - authorization_id
+      - PayPal-Request-Id
+      - Prefer
+    konfig-generated-schema-single-parameter-schema-post--v2-payments-authorizations-authorization_id-void:
+      properties:
+        authorization_id:
+          type: string
+        PayPal-Auth-Assertion:
+          type: string
+        Prefer:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+      required:
+      - authorization_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - authorization_id
+      - PayPal-Auth-Assertion
+      - Prefer
+    konfig-generated-schema-single-parameter-schema-get--v2-payments-captures-capture_id:
+      properties:
+        capture_id:
+          type: string
+      required:
+      - capture_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - capture_id
+    konfig-generated-schema-single-parameter-schema-post--v2-payments-captures-capture_id-refund:
+      properties:
+        capture_id:
+          type: string
+        PayPal-Request-Id:
+          type: string
+        Prefer:
+          default: return=minimal
+          example: return=minimal
+          type: string
+          x-konfig-original-example: return=minimal
+          x-konfig-generated-schema: konfig-generated-schema-components-parameters-prefer-schema
+        PayPal-Auth-Assertion:
+          type: string
+        amount:
+          $ref: '#/components/schemas/money'
+        custom_id:
+          description: The API caller-provided external ID. Used to reconcile API
+            caller-initiated transactions with PayPal transactions. Appears in transaction
+            and settlement reports. The pattern is defined by an external party and
+            supports Unicode.
+          maxLength: 127
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        invoice_id:
+          description: The API caller-provided external invoice ID for this order.
+            The pattern is defined by an external party and supports Unicode.
+          maxLength: 127
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        note_to_payer:
+          description: The reason for the refund. Appears in both the payer's transaction
+            history and the emails that the payer receives. The pattern is defined
+            by an external party and supports Unicode.
+          maxLength: 255
+          minLength: 1
+          pattern: ^.*$
+          type: string
+        payment_instruction:
+          $ref: '#/components/schemas/payment_instruction-2'
+      required:
+      - capture_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - capture_id
+      - PayPal-Request-Id
+      - Prefer
+      - PayPal-Auth-Assertion
+    konfig-generated-schema-single-parameter-schema-get--v2-payments-refunds-refund_id:
+      properties:
+        refund_id:
+          type: string
+      required:
+      - refund_id
+      type: object
+      x-do-not-generate: true
+      x-konfig-is-parameter:
+      - refund_id
+    INVALID_ACCOUNT_STATUS:
+      properties:
+        description:
+          enum:
+          - Account validations failed for the user.
+          type: string
+        issue:
+          enum:
+          - INVALID_ACCOUNT_STATUS
+          type: string
+      title: INVALID_ACCOUNT_STATUS
+    PERMISSION_DENIED:
+      properties:
+        description:
+          enum:
+          - You do not have permission to access or perform operations on this resource.
+          type: string
+        issue:
+          enum:
+          - PERMISSION_DENIED
+          type: string
+      title: PERMISSION_DENIED
+    INVALID_RESOURCE_ID:
+      properties:
+        description:
+          enum:
+          - Specified resource ID does not exist. Please check the resource ID and
+            try again.
+          type: string
+        issue:
+          enum:
+          - INVALID_RESOURCE_ID
+          type: string
+      title: INVALID_RESOURCE_ID
+    PREVIOUS_REQUEST_IN_PROGRESS:
+      properties:
+        description:
+          enum:
+          - A previous request on this resource is currently in progress. Please wait
+            for sometime and try again. It is best to space out the initial and the
+            subsequent request(s) to avoid receiving this error.
+          type: string
+        issue:
+          enum:
+          - PREVIOUS_REQUEST_IN_PROGRESS
+          type: string
+      title: PREVIOUS_REQUEST_IN_PROGRESS
+    authorization_allOf:
+      properties:
+        id:
+          description: The PayPal-generated ID for the authorized payment.
+          readOnly: true
+          type: string
+        amount:
+          $ref: '#/components/schemas/money'
+        invoice_id:
+          description: The API caller-provided external invoice number for this order.
+            Appears in both the payer's transaction history and the emails that the
+            payer receives.
+          readOnly: true
+          type: string
+        custom_id:
+          description: The API caller-provided external ID. Used to reconcile API
+            caller-initiated transactions with PayPal transactions. Appears in transaction
+            and settlement reports.
+          maxLength: 127
+          type: string
+        network_transaction_reference:
+          $ref: '#/components/schemas/network_transaction_reference'
+        seller_protection:
+          $ref: '#/components/schemas/seller_protection'
+        expiration_time:
+          description: "The date and time, in [Internet date and time format](https://tools.ietf.org/html/rfc3339#section-5.6).\
+            \ Seconds are required while fractional seconds are optional.<blockquote><strong>Note:</strong>\
+            \ The regular expression provides guidance but does not reject all invalid\
+            \ dates.</blockquote>"
+          format: ppaas_date_time_v3
+          maxLength: 64
+          minLength: 20
+          pattern: "^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2][0-9]|3[0-1])[T,t]([0-1][0-9]|2[0-3]):[0-5][0-9]:([0-5][0-9]|60)([.][0-9]+)?([Zz]|[+-][0-9]{2}:[0-9]{2})$"
+          type: string
+        links:
+          description: "An array of related [HATEOAS links](/docs/api/reference/api-responses/#hateoas-links)."
+          items:
+            $ref: '#/components/schemas/link_description'
+          readOnly: true
+          type: array
+      example: null
+    authorization_2_allOf:
+      properties:
+        supplementary_data:
+          $ref: '#/components/schemas/supplementary_data'
+        payee:
+          $ref: '#/components/schemas/payee_base'
+      example: null
+    capture_request_allOf:
+      properties:
+        amount:
+          $ref: '#/components/schemas/money'
+        invoice_id:
+          description: The API caller-provided external invoice number for this order.
+            Appears in both the payer's transaction history and the emails that the
+            payer receives.
+          maxLength: 127
+          type: string
+        final_capture:
+          default: false
+          description: Indicates whether you can make additional captures against
+            the authorized payment. Set to `true` if you do not intend to capture
+            additional payments against the authorization. Set to `false` if you intend
+            to capture additional payments against the authorization.
+          example: false
+          type: boolean
+          x-konfig-original-example: false
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture_request-allOf-1-properties-final_capture
+        payment_instruction:
+          $ref: '#/components/schemas/payment_instruction'
+        note_to_payer:
+          description: An informational note about this settlement. Appears in both
+            the payer's transaction history and the emails that the payer receives.
+          maxLength: 255
+          type: string
+        soft_descriptor:
+          description: The payment descriptor on the payer's account statement.
+          maxLength: 22
+          type: string
+      example: null
+    capture_allOf:
+      properties:
+        id:
+          description: The PayPal-generated ID for the captured payment.
+          readOnly: true
+          type: string
+        amount:
+          $ref: '#/components/schemas/money'
+        invoice_id:
+          description: The API caller-provided external invoice number for this order.
+            Appears in both the payer's transaction history and the emails that the
+            payer receives.
+          readOnly: true
+          type: string
+        custom_id:
+          description: The API caller-provided external ID. Used to reconcile API
+            caller-initiated transactions with PayPal transactions. Appears in transaction
+            and settlement reports.
+          maxLength: 127
+          type: string
+        network_transaction_reference:
+          $ref: '#/components/schemas/network_transaction_reference'
+        seller_protection:
+          $ref: '#/components/schemas/seller_protection'
+        final_capture:
+          default: false
+          description: Indicates whether you can make additional captures against
+            the authorized payment. Set to `true` if you do not intend to capture
+            additional payments against the authorization. Set to `false` if you intend
+            to capture additional payments against the authorization.
+          example: false
+          readOnly: true
+          type: boolean
+          x-konfig-original-example: false
+          x-konfig-generated-schema: konfig-generated-schema-components-schemas-capture-allOf-1-properties-final_capture
+        seller_receivable_breakdown:
+          $ref: '#/components/schemas/seller_receivable_breakdown'
+        disbursement_mode:
+          $ref: '#/components/schemas/disbursement_mode'
+        links:
+          description: "An array of related [HATEOAS links](/docs/api/reference/api-responses/#hateoas-links)."
+          items:
+            $ref: '#/components/schemas/link_description'
+          readOnly: true
+          type: array
+        processor_response:
+          $ref: '#/components/schemas/processor_response'
+      example: null
+    Merchant_Payable_Breakdown:
+      description: The breakdown of the refund.
+      properties:
+        gross_amount:
+          $ref: '#/components/schemas/money'
+        paypal_fee:
+          $ref: '#/components/schemas/money'
+        paypal_fee_in_receivable_currency:
+          $ref: '#/components/schemas/money'
+        net_amount:
+          $ref: '#/components/schemas/money'
+        net_amount_in_receivable_currency:
+          $ref: '#/components/schemas/money'
+        platform_fees:
+          description: "An array of platform or partner fees, commissions, or brokerage\
+            \ fees for the refund."
+          items:
+            $ref: '#/components/schemas/platform_fee'
+          maxItems: 1
+          minItems: 0
+          type: array
+        net_amount_breakdown:
+          description: An array of breakdown values for the net amount. Returned when
+            the currency of the refund is different from the currency of the PayPal
+            account where the payee holds their funds.
+          items:
+            $ref: '#/components/schemas/net_amount_breakdown_item'
+          readOnly: true
+          type: array
+        total_refunded_amount:
+          $ref: '#/components/schemas/money'
+      readOnly: true
+      title: Merchant Payable Breakdown
+      type: object
+      example: null
+    refund_allOf:
+      properties:
+        id:
+          description: The PayPal-generated ID for the refund.
+          readOnly: true
+          type: string
+        amount:
+          $ref: '#/components/schemas/money'
+        invoice_id:
+          description: The API caller-provided external invoice number for this order.
+            Appears in both the payer's transaction history and the emails that the
+            payer receives.
+          readOnly: true
+          type: string
+        custom_id:
+          description: The API caller-provided external ID. Used to reconcile API
+            caller-initiated transactions with PayPal transactions. Appears in transaction
+            and settlement reports.
+          maxLength: 127
+          minLength: 1
+          pattern: "^[A-Za-z0-9-_.,]*$"
+          type: string
+        acquirer_reference_number:
+          description: "Reference ID issued for the card transaction. This ID can\
+            \ be used to track the transaction across processors, card brands and\
+            \ issuing banks."
+          maxLength: 36
+          minLength: 1
+          pattern: "^[a-zA-Z0-9]+$"
+          type: string
+        note_to_payer:
+          description: The reason for the refund. Appears in both the payer's transaction
+            history and the emails that the payer receives.
+          readOnly: true
+          type: string
+        seller_payable_breakdown:
+          $ref: '#/components/schemas/Merchant_Payable_Breakdown'
+        payer:
+          $ref: '#/components/schemas/payee_base'
+        links:
+          description: "An array of related [HATEOAS links](/docs/api/reference/api-responses/#hateoas-links)."
+          items:
+            $ref: '#/components/schemas/link_description'
+          readOnly: true
+          type: array
+      example: null
+  securitySchemes:
+    Oauth2:
+      description: OAuth 2.0 authentication
+      flows:
+        clientCredentials:
+          scopes:
+            https://uri.paypal.com/services/payments/payment/authcapture: Permission
+              to do non-real time payments like capture on authorization
+            https://uri.paypal.com/services/payments/refund: Permission to initiate
+              a refund on a capture transaction
+            https://uri.paypal.com/services/payments/non-referenced-credit: Permission
+              to initiate non referenced credit
+            https://uri.paypal.com/services/payments/realtimepayment: "Permission\
+              \ to do any real time payment, with support for sale/authorize/order\
+              \ intents"
+            https://uri.paypal.com/services/payments/reversepayment: Permission to
+              do any reverse payment
+          tokenUrl: /v1/oauth2/token
+      type: oauth2
+      x-konfig-globally-required-security: true
+
